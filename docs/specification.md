@@ -15,6 +15,7 @@ auto render to Hugo post file.
 `gseo` has the following functions:
 
 - `gseo init ...` init google auth Credentials
+- `gseo site` show all sites
 - `gseo keyword ...` download hugo post keywords from Google Search Console API, and cache it in `./.gseo/` dir
 - `gseo render ...` render hugo post markdown files
 - `gseo version` show the client version

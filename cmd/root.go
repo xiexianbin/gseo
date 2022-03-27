@@ -23,13 +23,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gseo",
 	Short: "Google Search Console SEO for Hugo",
-	Long: "a golang client to optimize [hugo](https://www.xiexianbin.cn/tags/hugo/) seo by Google Search Console.",
+	Long:  "a golang client to optimize [hugo](https://www.xiexianbin.cn/tags/hugo/) seo by Google Search Console.",
 
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -60,5 +58,5 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("verbose", "v", false, "debug info.")
 }

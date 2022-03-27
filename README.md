@@ -8,6 +8,14 @@ a golang client to optimize [hugo](https://www.xiexianbin.cn/tags/hugo/) seo by 
 go install github.com/xiexianbin/gseo
 ```
 
+## dev
+
+- debug
+
+```
+go test -v -run TestClient google/client_test.go
+```
+
 ## ref
 
 - https://developers.google.com/webmaster-tools/about

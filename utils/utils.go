@@ -20,8 +20,11 @@ import (
 	"bufio"
 	"crypto/rand"
 	"fmt"
+	"github.com/mitchellh/go-homedir"
 	"os"
+	"sort"
 	"strings"
+	"time"
 )
 
 func ReadFromCmd(tips string) (string, error) {
@@ -42,4 +45,43 @@ func EId() string {
 	b8 := fmt.Sprintf("%x%x",
 		b[4:6], b[6:8])
 	return b8
+}
+
+func GetHome() string {
+	home, _ := homedir.Dir()
+	return home
+}
+
+func GetCacheFile() string {
+	return fmt.Sprintf("%s/%s/cache-%s.json", GetHome(), DefaultConfigSubDir, TodayDate())
+}
+
+func TodayDate() string {
+	return time.Now().Format("2006-01-02")
+}
+
+// LastDate last x day date
+func LastDate(last int) string {
+	return time.Now().AddDate(0, 0, 0-last).Format("2006-01-02")
+}
+
+func SortMap(m map[string]float64) []string {
+	var r []string
+	t := make(map[float64]string)
+	for k, v := range m {
+		t[v] = k
+	}
+
+	var keys []float64
+	for k := range t {
+		keys = append(keys, k)
+	}
+
+	sort.Float64s(keys)
+
+	for _, k := range keys {
+		r = append(r, t[k])
+	}
+
+	return r
 }

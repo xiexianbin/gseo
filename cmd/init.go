@@ -20,15 +20,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/xiexianbin/gseo/googleapi"
 	"github.com/xiexianbin/gseo/utils"
 )
 
 var force bool
-var clientID string
 var clientSecret string
 
 // initCmd represents the init command
@@ -37,48 +36,36 @@ var initCmd = &cobra.Command{
 	Short: "init gseo configure",
 	Long:  "init gseo configure.",
 	Run: func(cmd *cobra.Command, args []string) {
-		home, _ := homedir.Dir()
+		viper.SetConfigName(utils.DefaultCfgFileName)
+		viper.SetConfigType("yaml")
+		viper.Set("name", utils.Name)
+		viper.AddConfigPath(utils.DefaultConfigPath)
 		err := viper.ReadInConfig()
 		if err != nil || force {
-			viper.Set("name", "gseo")
-
-			// set gseo config file
-			cfgFile, err := utils.ReadFromCmd(fmt.Sprintf("Please enter gseo config path (default is %s/.gseo.yaml): ", home))
+			confDir := fmt.Sprintf("%s%c%s", utils.GetHome(), os.PathSeparator, utils.DefaultConfigSubDir)
+			err = os.MkdirAll(confDir, os.ModePerm)
 			if err != nil {
-				_ = fmt.Errorf("Read gseo config file path err: %s.\n", err)
+				_ = fmt.Errorf("create config dir %s err: %s.\n", confDir, err.Error())
 				os.Exit(1)
 			}
-			if cfgFile == "" {
-				cfgFile = fmt.Sprintf("%s%c.gseo.yaml", home, os.PathSeparator)
-			}
+			viper.Set("conf_dir", confDir)
 
+			// set google client secret
+			if clientSecret == "" {
+				clientSecret, err = utils.ReadFromCmd(fmt.Sprintf("Please enter Google API client_secret.json path: "))
+				if err != nil {
+					fmt.Println("Read Google API client_secret.json path err:", err)
+					os.Exit(1)
+				}
+			}
+			viper.Set("client_secret", clientSecret)
+
+			cfgFile := fmt.Sprintf("%s/%s", confDir, utils.DefaultCfgFileName)
 			_, err = os.Create(cfgFile)
 			if err != nil {
 				_ = fmt.Errorf("create config file %s err: %s.\n", cfgFile, err.Error())
 				os.Exit(1)
 			}
-			viper.SetConfigFile(cfgFile)
-
-			viper.Set("client_id", clientID)
-			viper.Set("client_secret", clientSecret)
-
-
-			// set gseo cache dir
-			cacheDir, err := utils.ReadFromCmd(fmt.Sprintf("Please enter gseo cache dir (default is %s/.gseo/): ", home))
-			if err != nil {
-				_ = fmt.Errorf("Read gseo cache dir path err: %s.\n", err)
-				os.Exit(1)
-			}
-			if cacheDir == "" {
-				cacheDir = fmt.Sprintf("%s%c.gseo", home, os.PathSeparator)
-			}
-
-			err = os.MkdirAll(cacheDir, os.ModePerm)
-			if err != nil {
-				_ = fmt.Errorf("create config dir %s err: %s.\n", cfgFile, err.Error())
-				os.Exit(1)
-			}
-			viper.Set("cache_dir", cacheDir)
 
 			// write config to file
 			_ = viper.MergeInConfig()
@@ -86,11 +73,16 @@ var initCmd = &cobra.Command{
 			if err == nil {
 				fmt.Println("init config success!")
 			} else {
-				_ = fmt.Errorf("init config error: %v", err.Error())
+				fmt.Println("init config error:", err.Error())
+				os.Exit(1)
 			}
 		} else {
 			fmt.Println("gseo config is already init, if you want to re-init use `--force` flag")
 		}
+
+		// init google token
+		_, _ = googleapi.Client()
+		fmt.Println("init Google API OAuth2.0 token success!")
 	},
 }
 
@@ -103,8 +95,7 @@ func init() {
 	// and all subcommands, e.g.:
 	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
 	initCmd.PersistentFlags().BoolVarP(&force, "force", "f", false, "Force re-init config.")
-	initCmd.PersistentFlags().StringVarP(&clientID, "client-id", "i", "", "google api client id.")
-	initCmd.PersistentFlags().StringVarP(&clientSecret, "client-secret", "s", "", "google api client secret.")
+	initCmd.PersistentFlags().StringVarP(&clientSecret, "client-secret", "s", "", "google api client secret json path.")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:

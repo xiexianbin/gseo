@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/url"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -27,6 +29,33 @@ import (
 type PostYaml struct {
 	Keywords []string `json:"keywords"`
 	Tags     []string `json:"tags"`
+}
+
+func GetMarkdownFileByURL(permalink, contentPath string) (path string, err error) {
+	u, err := url.Parse(permalink)
+	if err != nil {
+		panic(err)
+	}
+
+	relURL := u.Path
+	if strings.HasPrefix(relURL, "/categories/") || strings.HasPrefix(relURL, "/tags/") {
+		return "", fmt.Errorf("could not find markdownd file for %s in %s", permalink, contentPath)
+	}
+
+	var markdownFilePath string
+	tmpDir := filepath.Join(contentPath, relURL)
+	if IsDir(tmpDir) {
+		markdownFilePath = fmt.Sprintf("%s/_index.md", tmpDir)
+	} else {
+		tmpDir = strings.TrimRight(tmpDir, "/")
+		markdownFilePath = fmt.Sprintf("%s.md", tmpDir)
+	}
+
+	if IsFile(markdownFilePath) {
+		return markdownFilePath, nil
+	}
+
+	return "", fmt.Errorf("could not find markdownd file for %s in %s", permalink, contentPath)
 }
 
 func ParsePostKeysAndTags(filename string) (*PostYaml, error) {
@@ -43,13 +72,13 @@ func ParsePostKeysAndTags(filename string) (*PostYaml, error) {
 	return &postYaml, nil
 }
 
-func UpdateKeywords(filename string, newKeywords []string) error {
+func UpdateKeywords(filename string, keywords []string) error {
 	postYaml, err := ParsePostKeysAndTags(filename)
 	if err != nil {
 		return err
 	}
 
-	if len(newKeywords) == 0 {
+	if len(keywords) == 0 {
 		return nil
 	}
 
@@ -60,6 +89,17 @@ func UpdateKeywords(filename string, newKeywords []string) error {
 		oldStr = "keywords:\\n  - " + strings.Join(postYaml.Keywords, "\\n  - ")
 	}
 
+	newKeywords := postYaml.Keywords
+	for _, key := range keywords {
+		if IsContain(postYaml.Tags, key) || IsContain(newKeywords, key) {
+			continue
+		}
+		newKeywords = append(newKeywords, key)
+	}
+
+	if len(newKeywords) == 0 {
+		return nil
+	}
 	newStr := "keywords:\\n  - " + strings.Join(newKeywords, "\\n  - ")
 
 	var cmd string

@@ -21,6 +21,16 @@ import (
 	"testing"
 )
 
+func TestGetMarkdownFileByURL(t *testing.T) {
+
+	markdownFilePath, err := GetMarkdownFileByURL("https://www.xiexianbin.cn/program/go/tinygo/", "/Users/xiexianbin/workspace/code/github.com/xiexianbin/note.seo/content")
+	if err != nil {
+		return
+	}
+
+	fmt.Println("markdownFilePath", markdownFilePath)
+}
+
 func TestParsePostKeysAndTags(t *testing.T) {
 	filename := "./samples/test-1.md"
 	postYaml, err := ParsePostKeysAndTags(filename)

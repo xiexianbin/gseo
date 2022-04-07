@@ -23,15 +23,18 @@ import (
 	"google.golang.org/api/searchconsole/v1"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
+var contentPath string
 var clicks float64
 var ctr float64
 var impressions float64
 var position float64
-var max int64
+var max int
+var dryrun bool
 
 type T struct {
 	Impressions int `json:"impressions"`
@@ -42,14 +45,28 @@ type T struct {
 var renderCmd = &cobra.Command{
 	Use:   "render",
 	Short: "render hugo post markdown files",
-	Long: `render hugo post markdown files.`,
+	Long: `render hugo post markdown files.
+default args is:
+  gseo render --content PATH_OF_HUGO_CONTENT --position 10 --ctr 0 --impressions 100 --clicks 0.3 --max 8 --dryrun
+`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if contentPath == "" {
+			fmt.Println("content path not special.")
+			os.Exit(1)
+		}
+		if utils.IsDir(contentPath) == false {
+			fmt.Println("content path not exists.")
+			os.Exit(1)
+		}
+		if strings.HasSuffix(contentPath, "/") {
+			contentPath = strings.TrimRight(contentPath, "/")
+		}
 		if ctr < 0 || ctr > 1 {
 			fmt.Println("0 <= ctr <= 1.")
 			os.Exit(1)
 		}
-		if max <= 0 {
-			fmt.Println("max must >= 1")
+		if max < -1 || max == 0 {
+			fmt.Println("max must >= 1 or must = -1")
 			os.Exit(1)
 		}
 
@@ -63,23 +80,45 @@ var renderCmd = &cobra.Command{
 
 		byteValue, _ := ioutil.ReadAll(file)
 		var oldResult []*searchconsole.ApiDataRow
-		_= json.Unmarshal(byteValue, &oldResult)
+		_ = json.Unmarshal(byteValue, &oldResult)
 
 		newResult := utils.ParserSearchAnalyticsQuery(oldResult)
-		//r, _ := json.Marshal(newResult)
-		//fmt.Println(r)
 		for url, item := range newResult {
-			fmt.Println(fmt.Sprintf("%s", url))
-			var count int64
-			count = 0
+			count := 0
+			var keywords []string
 			for k, v := range item {
-				if v.Clicks >= clicks && v.Ctr >= ctr && v.Impressions >= impressions && v.Position >= position{
-					fmt.Println(fmt.Sprintf("  - %s", k))
-					count ++
+				if v.Clicks >= clicks && v.Ctr >= ctr && v.Impressions >= impressions && v.Position >= position {
+					keywords = append(keywords, k)
+					count++
 				}
-				if count >= max {
+				if count >= max && max != -1 {
 					break
 				}
+			}
+
+			if len(keywords) == 0 {
+				continue
+			}
+
+			fmt.Println(fmt.Sprintf("%s", url))
+			for _, k := range keywords {
+				fmt.Println(fmt.Sprintf("  - %s", k))
+			}
+
+			if dryrun == false {
+				markdownFilePath, err := utils.GetMarkdownFileByURL(url, contentPath)
+				if err != nil {
+					fmt.Printf(err.Error())
+					continue
+				}
+
+				err = utils.UpdateKeywords(markdownFilePath, keywords)
+				if err != nil {
+					fmt.Printf(err.Error())
+					break
+				}
+
+				fmt.Printf("update markdownFilePath %s, keywords %v done.\n", markdownFilePath, keywords)
 			}
 		}
 	},
@@ -97,9 +136,11 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// renderCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	renderCmd.Flags().StringVarP(&contentPath, "content", "", "", "hugo content path")
 	renderCmd.Flags().Float64VarP(&clicks, "clicks", "k", 0, ">=clicks to render seo.")
 	renderCmd.Flags().Float64VarP(&ctr, "ctr", "c", 0.3, "ctr = clicks / impressions to render seo, and 0 <= ctr <= 1.")
 	renderCmd.Flags().Float64VarP(&impressions, "impressions", "i", 100, ">=impressions to render seo.")
 	renderCmd.Flags().Float64VarP(&position, "position", "p", 10, ">=position to render seo.")
-	renderCmd.Flags().Int64VarP(&max, "max", "m", 8, "max seo items.")
+	renderCmd.Flags().IntVarP(&max, "max", "m", 8, "max seo items, -1 is un-limit.")
+	renderCmd.Flags().BoolVarP(&dryrun, "dryrun", "r", false, "dry run mode.")
 }

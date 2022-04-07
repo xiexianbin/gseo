@@ -37,7 +37,7 @@ var keywordCmd = &cobra.Command{
 	Long:  "download hugo post keywords from Google Search Console API, and cache it in `./.gseo/` dir",
 	Run: func(cmd *cobra.Command, args []string) {
 		if site == "" {
-			fmt.Println("site is unknown, use `gseo sites` get sites!")
+			fmt.Println("site is unknown, use `-s xxx`, get sites cmd is `gseo sites`!")
 			os.Exit(1)
 		}
 		if last <= 0 {
@@ -51,8 +51,8 @@ var keywordCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		searchanalyticsqueryrequest := searchconsole.SearchAnalyticsQueryRequest{
-			StartDate: utils.LastDate(last),
-			EndDate: utils.TodayDate(),
+			StartDate:  utils.LastDate(last),
+			EndDate:    utils.TodayDate(),
 			Dimensions: []string{"PAGE", "QUERY"},
 		}
 		rows := sc.Query(site, &searchanalyticsqueryrequest)
@@ -67,7 +67,7 @@ var keywordCmd = &cobra.Command{
 			// open File
 			fileName := utils.GetCacheFile()
 			file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
-			if err != nil{
+			if err != nil {
 				fmt.Println("Open file err =", err)
 				return
 			}
@@ -75,7 +75,7 @@ var keywordCmd = &cobra.Command{
 
 			// write to file
 			n, err := file.Write(_rows)
-			if err != nil{
+			if err != nil {
 				fmt.Println("Write file err =", err)
 				return
 			}

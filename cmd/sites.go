@@ -24,7 +24,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/searchconsole/v1"
 
-    "github.com/xiexianbin/gseo/googleapi"
+	"github.com/xiexianbin/gseo/googleapi"
 	"github.com/xiexianbin/gseo/utils/logger"
 )
 
@@ -35,14 +35,14 @@ var sitesCmd = &cobra.Command{
 	Long:  `site list.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, client := googleapi.Client()
-		searchconsoleService, err := searchconsole.NewService(
+		searchConsoleService, err := searchconsole.NewService(
 			ctx,
 			option.WithHTTPClient(client))
 		if err != nil {
 			log.Fatalf("Unable to retrieve Search Console client: %v", err)
 		}
 
-		siteList := searchconsoleService.Sites.List()
+		siteList := searchConsoleService.Sites.List()
 		sitesListResponse, err := siteList.Do()
 		logger.Debug("sitesListResponse is: %v", sitesListResponse)
 		if err != nil {

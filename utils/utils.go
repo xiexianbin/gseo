@@ -27,6 +27,22 @@ import (
 	"time"
 )
 
+func IsDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
+}
+
+func IsFile(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !s.IsDir()
+}
+
 func ReadFromCmd(tips string) (string, error) {
 	fmt.Printf("%s", tips)
 	reader := bufio.NewReader(os.Stdin)
@@ -84,4 +100,13 @@ func SortMap(m map[string]float64) []string {
 	}
 
 	return r
+}
+
+func IsContain(items []string, item string) bool {
+	for _, eachItem := range items {
+		if eachItem == item {
+			return true
+		}
+	}
+	return false
 }

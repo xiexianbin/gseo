@@ -14,30 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package logger
-
-import (
-	"fmt"
-	"github.com/spf13/viper"
-)
-
-func Println(a ...interface{}) {
-	fmt.Println(a...)
-}
-
-func Printf(format string, a ...interface{}) {
-	fmt.Printf(format, a...)
-	fmt.Println()
-}
-
-func Debug(a ...interface{}) {
-	if viper.GetBool("verbose") {
-		Println(a...)
-	}
-}
-
-func Debugf(format string, a ...interface{}) {
-	if viper.GetBool("verbose") {
-		Printf(format, a...)
-	}
-}
+package googleapi

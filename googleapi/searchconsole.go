@@ -18,13 +18,12 @@ package googleapi
 
 import (
 	"context"
-	"fmt"
-	"github.com/xiexianbin/gseo/utils/logger"
-	"log"
 	"net/http"
 
 	"google.golang.org/api/option"
 	"google.golang.org/api/searchconsole/v1"
+
+	"github.com/xiexianbin/gseo/utils/logger"
 )
 
 type SearchConsoleAPI struct {
@@ -39,26 +38,25 @@ func NewSearchConsoleAPI() SearchConsoleAPI {
 		ctx,
 		option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve Search Console client: %v", err)
+		logger.Debugf("Unable to retrieve Search Console client: %v", err)
 		return SearchConsoleAPI{}
 	}
 
-    return SearchConsoleAPI{
-        Ctx: ctx,
-        Client: client,
-        SearchConsoleService: searchConsoleService,
-    }
+	return SearchConsoleAPI{
+		Ctx:                  ctx,
+		Client:               client,
+		SearchConsoleService: searchConsoleService,
+	}
 }
 
 func (sc *SearchConsoleAPI) Query(siteUrl string, searchanalyticsqueryrequest *searchconsole.SearchAnalyticsQueryRequest) []*searchconsole.ApiDataRow {
 	query := sc.SearchConsoleService.Searchanalytics.Query(siteUrl, searchanalyticsqueryrequest)
 	queryResponse, err := query.Do()
-	logger.Debug("queryResponse is: %v", queryResponse)
+	logger.Debugf("queryResponse is: %v", queryResponse)
 	if err != nil {
-		fmt.Println("Call Google Search Console API error:", err)
+		logger.Debugf("Call Google Search Console API error: %v", err)
 		return nil
 	}
 
 	return queryResponse.Rows
 }
-

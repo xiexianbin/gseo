@@ -22,8 +22,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/xiexianbin/gseo/utils/logger"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 
@@ -56,12 +56,12 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 
 	var authCode string
 	if _, err := fmt.Scan(&authCode); err != nil {
-		log.Fatalf("Unable to read authorization code: %v", err)
+		logger.Debugf("Unable to read authorization code: %v", err)
 	}
 
 	tok, err := config.Exchange(context.TODO(), authCode)
 	if err != nil {
-		log.Fatalf("Unable to retrieve token from web: %v", err)
+		logger.Debugf("Unable to retrieve token from web: %v", err)
 	}
 	return tok
 }
@@ -75,7 +75,7 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	defer func(f *os.File) {
 		err := f.Close()
 		if err != nil {
-			log.Fatalf("Close %s err: %v", file, err)
+			logger.Debugf("Close %s err: %v", file, err)
 		}
 	}(f)
 	tok := &oauth2.Token{}
@@ -88,12 +88,12 @@ func saveToken(path string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		log.Fatalf("Unable to cache oauth token: %v", err)
+		logger.Debugf("Unable to cache oauth token: %v", err)
 	}
 	defer func(f *os.File) {
 		err := f.Close()
 		if err != nil {
-			log.Fatalf("Close %s err: %v", path, err)
+			logger.Debugf("Close %s err: %v", path, err)
 		}
 	}(f)
 	err = json.NewEncoder(f).Encode(token)
@@ -107,13 +107,14 @@ func Client() (context.Context, *http.Client) {
 	ctx := context.Background()
 	b, err := ioutil.ReadFile(clientSecretPath)
 	if err != nil {
-		log.Fatalf("Unable to read client secret file: %s, error: %v", clientSecretPath, err)
+		logger.Debugf("Unable to read client secret file: %s, error: %v", clientSecretPath, err)
+		return nil, nil
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, searchconsole.WebmastersReadonlyScope)
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		logger.Debugf("Unable to parse client secret file to config: %v", err)
 	}
 	client := getClient(config)
 

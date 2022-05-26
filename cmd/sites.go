@@ -17,9 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/spf13/cobra"
 	"google.golang.org/api/option"
 	"google.golang.org/api/searchconsole/v1"
@@ -39,21 +36,21 @@ var sitesCmd = &cobra.Command{
 			ctx,
 			option.WithHTTPClient(client))
 		if err != nil {
-			log.Fatalf("Unable to retrieve Search Console client: %v", err)
+			logger.Debugf("Unable to retrieve Search Console client: %s", err.Error())
 		}
 
 		siteList := searchConsoleService.Sites.List()
 		sitesListResponse, err := siteList.Do()
-		logger.Debug("sitesListResponse is: %v", sitesListResponse)
+		logger.Debugf("sitesListResponse is: %v", sitesListResponse)
 		if err != nil {
-			fmt.Println("Call Google Search Console API error:", err)
+			logger.Debugf("Call Google Search Console API error: %v", err)
 			return
 		}
 
 		if len(sitesListResponse.SiteEntry) > 0 {
-			fmt.Println("PermissionLevel  SiteUrl")
+			logger.Debug("PermissionLevel  SiteUrl")
 			for _, site := range sitesListResponse.SiteEntry {
-				fmt.Printf("%s        %s\n", site.PermissionLevel, site.SiteUrl)
+				logger.Debugf("%s        %s", site.PermissionLevel, site.SiteUrl)
 			}
 		}
 	},

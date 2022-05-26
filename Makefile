@@ -1,55 +1,30 @@
-VERSION := $(shell git describe --long --tags --dirty --always)
-BUILD := $(shell git rev-parse --short HEAD)
-PROJECTNAME := $(shell basename "$(PWD)")
+# https://www.xiexianbin.cn/program/tools/2016-01-09-makefile/index.html
+.PHONY: all test clean build build-linux build-mac build-windows
 
-# Go related variables.
-GOBASE := $(shell pwd)
-GOPATH := ${GOPATH}
-GOBIN := $(GOBASE)/bin
-GOFILES := $(wildcard *.go)
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
+BINARY_NAME=gseo
+BINARY_LINUX=$(BINARY_NAME)-linux
+BINARY_MAC=$(BINARY_NAME)-darwin
+BINARY_WIN=$(BINARY_NAME)-windows
 
-# Use linker flags to provide version/build settings
-LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
+help:  ## Show this help.
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# Redirect error output to a file, so we can show it in development mode.
-STDERR := /tmp/.$(PROJECTNAME)-stderr.txt
+all: clean test build build-linux build-mac build-windows  ## Build all
+test:  ## run test
+	$(GOTEST) -v ./...
+clean: ## run clean bin files
+	$(GOCLEAN)
+	rm -f bin/$(BINARY_NAME)
+build:  ## build for current os
+	$(GOBUILD) -o bin/$(BINARY_NAME) -v
 
-# Make is verbose in Linux. Make it silent.
-MAKEFLAGS += --silent
-
-## compile: Compile the binary.
-compile:
-	@-touch $(STDERR)
-	@-rm $(STDERR)
-	@-$(MAKE) -s go-build 2> $(STDERR)
-	@cat $(STDERR) | sed -e '1s/.*/\nError:\n/'  | sed 's/make\[.*/ /' | sed "/^/s/^/     /" 1>&2
-
-## clean: Clean build files.
-clean:
-	@-rm $(GOBIN)/$(PROJECTNAME) 2> /dev/null
-	@-$(MAKE) go-clean
-
-go-get:
-	@echo "  >  Checking if there is any missing dependencies..."
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) dep ensure
-
-go-build:
-	@echo "  >  Building binary..."
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build $(LDFLAGS) -o $(GOBIN)/$(PROJECTNAME) $(GOFILES)
-
-build-linux:
-	@echo "  >  Building Linux binary..."
-	@GOPATH=$(GOPATH) CGO_ENABLED=0  GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(GOBIN)/$(PROJECTNAME) $(GOFILES)
-
-go-clean:
-	@echo "  >  Cleaning build cache"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
-
-.PHONY: help
-all: help
-help: Makefile
-	@echo
-	@echo " Choose a command run in "$(PROJECTNAME)":"
-	@echo
-	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
-	@echo
+build-linux:  ## build linux amd64
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o bin/$(BINARY_LINUX) -v
+build-mac:  ## build mac amd64
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -o bin/$(BINARY_MAC) -v
+build-windows:  ## build windows amd64
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) -o bin/$(BINARY_WIN) -v

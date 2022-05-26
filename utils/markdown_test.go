@@ -18,27 +18,36 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
 func TestGetMarkdownFileByURL(t *testing.T) {
+	contentPath := "/Users/xiexianbin/workspace/code/github.com/xiexianbin/note.seo/content"
+	_, err := os.Stat(contentPath)
+	if err != nil && os.IsNotExist(err) == false {
+		markdownFilePath, err := GetMarkdownFileByURL("https://www.xiexianbin.cn/program/go/tinygo/", contentPath)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-	markdownFilePath, err := GetMarkdownFileByURL("https://www.xiexianbin.cn/program/go/tinygo/", "/Users/xiexianbin/workspace/code/github.com/xiexianbin/note.seo/content")
-	if err != nil {
-		return
+		fmt.Println("markdownFilePath", markdownFilePath)
 	}
-
-	fmt.Println("markdownFilePath", markdownFilePath)
 }
 
 func TestParsePostKeysAndTags(t *testing.T) {
 	filename := "./samples/test-1.md"
 	postYaml, err := ParsePostKeysAndTags(filename)
-	fmt.Printf("postYaml: %v, error: %v", postYaml, err)
+	if err != nil {
+		fmt.Printf("postYaml: %v, error: %v", postYaml, err)
+	}
 
 	filename = "./samples/test-2.md"
 	postYaml, err = ParsePostKeysAndTags(filename)
-	fmt.Printf("postYaml: %v, error: %v", postYaml, err)
+	if err != nil {
+		fmt.Printf("postYaml: %v, error: %v", postYaml, err)
+	}
 }
 
 func TestUpdateKeywords(t *testing.T) {

@@ -1,11 +1,24 @@
 # gseo
 
+[![build-test](https://github.com/xiexianbin/gseo/actions/workflows/workflow.yaml/badge.svg)](https://github.com/xiexianbin/gseo/actions/workflows/workflow.yaml)
+[![GoDoc](https://godoc.org/github.com/xiexianbin/gseo?status.svg)](https://pkg.go.dev/github.com/xiexianbin/gseo)
+
 a golang client to optimize [hugo](https://www.xiexianbin.cn/tags/hugo/) seo by Google Search Console. read [gseo spec](./docs/specification.md) for more information.
 
 ## install
 
+- source
+
 ```
 go install github.com/xiexianbin/gseo
+```
+
+- bin
+
+```
+curl -Lfs -o gseo https://github.com/xiexianbin/gseo/releases/latest/download/gseo-{linux|darwin|windows}
+chmod +x gseo
+./gseo
 ```
 
 ## Use

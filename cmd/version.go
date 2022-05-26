@@ -43,9 +43,9 @@ func (v Version) String() string {
 // CurrentVersion represents the current build version.
 // This should be the only one.
 var CurrentVersion = Version{
-	Number:       0.1,
-	PatchVersion: 0,
-	Suffix:       "-DEV",
+	Number:       1.0,
+	PatchVersion: 1,
+	Suffix:       "",
 }
 
 func version(version float32, patchVersion int, suffix string) string {

@@ -28,7 +28,7 @@ func TestGetMarkdownFileByURL(t *testing.T) {
 	if err != nil && os.IsNotExist(err) == false {
 		markdownFilePath, err := GetMarkdownFileByURL("https://www.xiexianbin.cn/program/go/tinygo/", contentPath)
 		if err != nil {
-			fmt.Println(err)
+			t.Skip(err)
 			return
 		}
 
@@ -40,13 +40,13 @@ func TestParsePostKeysAndTags(t *testing.T) {
 	filename := "./samples/test-1.md"
 	postYaml, err := ParsePostKeysAndTags(filename)
 	if err != nil {
-		fmt.Printf("postYaml: %v, error: %v", postYaml, err)
+		t.Skipf("postYaml: %v, error: %v", postYaml, err)
 	}
 
 	filename = "./samples/test-2.md"
 	postYaml, err = ParsePostKeysAndTags(filename)
 	if err != nil {
-		fmt.Printf("postYaml: %v, error: %v", postYaml, err)
+		t.Skipf("postYaml: %v, error: %v", postYaml, err)
 	}
 }
 
@@ -55,13 +55,13 @@ func TestUpdateKeywords(t *testing.T) {
 	newKeywords := []string{"abc 中文", "我是 seo"}
 	err := UpdateKeywords(filename1, newKeywords)
 	if err != nil {
-		fmt.Println(err.Error())
+		t.Skip(err.Error())
 	}
 
 	filename2 := "./samples/test-1.md"
 	newKeywords = []string{"abc 中文", "我是 seo", "kubernetes"}
 	err = UpdateKeywords(filename2, newKeywords)
 	if err != nil {
-		fmt.Println(err.Error())
+		t.Skip(err.Error())
 	}
 }

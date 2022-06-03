@@ -18,39 +18,40 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/xiexianbin/golib/logger"
 	"google.golang.org/api/option"
 	"google.golang.org/api/searchconsole/v1"
 
 	"github.com/xiexianbin/gseo/googleapi"
-	"github.com/xiexianbin/gseo/utils/logger"
 )
 
 // sitesCmd represents the sites command
 var sitesCmd = &cobra.Command{
 	Use:   "sites",
-	Short: "site list",
-	Long:  `site list.`,
+	Short: "List sites from Google Searchconsole API",
+	Long:  `List sites from Google Searchconsole API.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, client := googleapi.Client()
+		ctx, client, _ := googleapi.Client()
 		searchConsoleService, err := searchconsole.NewService(
 			ctx,
 			option.WithHTTPClient(client))
 		if err != nil {
-			logger.Debugf("Unable to retrieve Search Console client: %s", err.Error())
+			logger.Errorf("Unable to retrieve Search Console client: %s", err.Error())
+			return
 		}
 
 		siteList := searchConsoleService.Sites.List()
 		sitesListResponse, err := siteList.Do()
-		logger.Debugf("sitesListResponse is: %v", sitesListResponse)
 		if err != nil {
-			logger.Debugf("Call Google Search Console API error: %v", err)
+			logger.Errorf("Call Google Search Console API error: %s", err.Error())
 			return
 		}
+		logger.Debugf("sitesListResponse is: %v", sitesListResponse)
 
 		if len(sitesListResponse.SiteEntry) > 0 {
-			logger.Debug("PermissionLevel  SiteUrl")
+			logger.Print("PermissionLevel  SiteUrl")
 			for _, site := range sitesListResponse.SiteEntry {
-				logger.Debugf("%s        %s", site.PermissionLevel, site.SiteUrl)
+				logger.Printf("%s        %s", site.PermissionLevel, site.SiteUrl)
 			}
 		}
 	},

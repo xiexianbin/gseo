@@ -18,13 +18,14 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/xiexianbin/gseo/googleapi"
-	"github.com/xiexianbin/gseo/utils"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/xiexianbin/golib/logger"
 	"google.golang.org/api/searchconsole/v1"
+
+	"github.com/xiexianbin/gseo/googleapi"
+	"github.com/xiexianbin/gseo/utils"
 )
 
 var site string
@@ -37,17 +38,17 @@ var keywordCmd = &cobra.Command{
 	Long:  "download hugo post keywords from Google Search Console API, and cache it in `./.gseo/` dir",
 	Run: func(cmd *cobra.Command, args []string) {
 		if site == "" {
-			fmt.Println("site is unknown, use `-s xxx`, get sites cmd is `gseo sites`!")
+			logger.Print("site is unknown, use `-s xxx`, get sites cmd is `gseo sites`!")
 			os.Exit(1)
 		}
 		if last <= 0 {
-			fmt.Println("--last -l must >= 0!")
+			logger.Print("--last -l must >= 0!")
 			os.Exit(1)
 		}
 
 		sc := googleapi.NewSearchConsoleAPI()
 		if sc.SearchConsoleService == nil {
-			fmt.Println("init search console API err.")
+			logger.Print("init search console API err.")
 			os.Exit(1)
 		}
 		searchanalyticsqueryrequest := searchconsole.SearchAnalyticsQueryRequest{
@@ -57,10 +58,10 @@ var keywordCmd = &cobra.Command{
 		}
 		rows := sc.Query(site, &searchanalyticsqueryrequest)
 		if len(rows) > 0 {
-			fmt.Println("Result:")
+			logger.Print("Result:")
 			for _, row := range rows {
 				r, _ := json.Marshal(row)
-				fmt.Println(string(r))
+				logger.Print(string(r))
 			}
 
 			_rows, _ := json.Marshal(rows)
@@ -68,7 +69,7 @@ var keywordCmd = &cobra.Command{
 			fileName := utils.GetCacheFile()
 			file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
 			if err != nil {
-				fmt.Println("Open file err =", err)
+				logger.Print("Open file err =", err)
 				return
 			}
 			defer file.Close()
@@ -76,12 +77,12 @@ var keywordCmd = &cobra.Command{
 			// write to file
 			n, err := file.Write(_rows)
 			if err != nil {
-				fmt.Println("Write file err =", err)
+				logger.Printf("Write file err: %s", err.Error())
 				return
 			}
-			fmt.Println("Write file", fileName, "success, n =", n)
+			logger.Printf("Write file %s success, n = %d", fileName, n)
 		} else {
-			fmt.Println("No Result from Google Console API.")
+			logger.Print("No Result from Google Console API.")
 		}
 	},
 }

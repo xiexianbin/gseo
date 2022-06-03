@@ -18,14 +18,15 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/xiexianbin/gseo/utils"
-	"google.golang.org/api/searchconsole/v1"
 	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/xiexianbin/golib/logger"
+	"google.golang.org/api/searchconsole/v1"
+
+	"github.com/xiexianbin/gseo/utils"
 )
 
 var contentPath string
@@ -51,22 +52,22 @@ default args is:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if contentPath == "" {
-			fmt.Println("content path not special.")
+			logger.Print("content path not special.")
 			os.Exit(1)
 		}
 		if utils.IsDir(contentPath) == false {
-			fmt.Println("content path not exists.")
+			logger.Print("content path not exists.")
 			os.Exit(1)
 		}
 		if strings.HasSuffix(contentPath, "/") {
 			contentPath = strings.TrimRight(contentPath, "/")
 		}
 		if ctr < 0 || ctr > 1 {
-			fmt.Println("0 <= ctr <= 1.")
+			logger.Print("0 <= ctr <= 1.")
 			os.Exit(1)
 		}
 		if max < -1 || max == 0 {
-			fmt.Println("max must >= 1 or must = -1")
+			logger.Print("max must >= 1 or must = -1")
 			os.Exit(1)
 		}
 
@@ -74,15 +75,16 @@ default args is:
 		fileName := utils.GetCacheFile()
 		file, err := os.Open(fileName)
 		if err != nil {
-			_ = fmt.Errorf("%v", err)
+			logger.Errorf("%v", err)
+			os.Exit(1)
 		}
 		defer file.Close()
 
 		byteValue, _ := ioutil.ReadAll(file)
-		var oldResult []*searchconsole.ApiDataRow
-		_ = json.Unmarshal(byteValue, &oldResult)
+		var rawResult []*searchconsole.ApiDataRow
+		_ = json.Unmarshal(byteValue, &rawResult)
 
-		newResult := utils.ParserSearchAnalyticsQuery(oldResult)
+		newResult := utils.ParserSearchAnalyticsQuery(rawResult)
 		for url, item := range newResult {
 			count := 0
 			var keywords []string
@@ -100,25 +102,27 @@ default args is:
 				continue
 			}
 
-			fmt.Println(fmt.Sprintf("%s", url))
+			logger.Print(url)
 			for _, k := range keywords {
-				fmt.Println(fmt.Sprintf("  - %s", k))
+				logger.Printf("  - %s", k)
 			}
 
 			if dryrun == false {
 				markdownFilePath, err := utils.GetMarkdownFileByURL(url, contentPath)
 				if err != nil {
-					fmt.Printf(err.Error())
+					logger.Printf("GetMarkdownFileByURL: %s, err: %s, skip.", url, err.Error())
 					continue
 				}
 
 				err = utils.UpdateKeywords(markdownFilePath, keywords)
 				if err != nil {
-					fmt.Printf(err.Error())
+					logger.Printf(
+						"UpdateKeywords: %s, keywords: %s, error: %s",
+						markdownFilePath, strings.Join(keywords, ","), err.Error())
 					break
 				}
 
-				fmt.Printf("update markdownFilePath %s, keywords %v done.\n", markdownFilePath, keywords)
+				logger.Printf("update markdownFilePath %s, keywords %v done.\n", markdownFilePath, keywords)
 			}
 		}
 	},

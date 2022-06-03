@@ -17,30 +17,31 @@ limitations under the License.
 package utils
 
 import (
-    "encoding/json"
-    "fmt"
-    "google.golang.org/api/searchconsole/v1"
-    "io/ioutil"
-    "os"
-    "testing"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"testing"
+
+	"google.golang.org/api/searchconsole/v1"
 )
 
 func TestParserSearchAnalyticsQuery(t *testing.T) {
-    // Open File
-    fileName := GetCacheFile()
-    file, err := os.Open(fileName)
-    if err != nil {
-        _ = fmt.Errorf("%v", err)
-    }
-    defer file.Close()
+	// Open File
+	fileName := GetCacheFile()
+	file, err := os.Open(fileName)
+	if err != nil {
+		_ = fmt.Errorf("%v", err)
+	}
+	defer file.Close()
 
-    byteValue, _ := ioutil.ReadAll(file)
-    var oldResult []*searchconsole.ApiDataRow
-    _= json.Unmarshal(byteValue, &oldResult)
+	byteValue, _ := ioutil.ReadAll(file)
+	var oldResult []*searchconsole.ApiDataRow
+	_ = json.Unmarshal(byteValue, &oldResult)
 
-    fmt.Println(fmt.Sprintf("%v", oldResult))
+	fmt.Println(fmt.Sprintf("%v", oldResult))
 
-    newResult := ParserSearchAnalyticsQuery(oldResult)
-    r, _ := json.Marshal(newResult)
-    fmt.Println(fmt.Sprintf("%s", r))
+	newResult := ParserSearchAnalyticsQuery(oldResult)
+	r, _ := json.Marshal(newResult)
+	fmt.Println(fmt.Sprintf("%s", r))
 }

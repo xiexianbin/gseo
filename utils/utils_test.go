@@ -17,16 +17,15 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestTodayDate(t *testing.T) {
-	fmt.Println(TodayDate())
+	t.Logf(TodayDate())
 }
 
 func TestLastDate(t *testing.T) {
-	fmt.Println(LastDate(90))
+	t.Logf(LastDate(90))
 }
 
 func TestSortMap(t *testing.T) {
@@ -36,5 +35,5 @@ func TestSortMap(t *testing.T) {
 	m["tags"] = 3
 
 	r := SortMap(m)
-	fmt.Printf("%v\n", r)
+	t.Logf("%v\n", r)
 }

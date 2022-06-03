@@ -22,11 +22,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/xiexianbin/gseo/utils/logger"
 	"io/ioutil"
 	"net/http"
 	"os"
 
+	"github.com/xiexianbin/golib/logger"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/searchconsole/v1"
@@ -102,21 +102,22 @@ func saveToken(path string, token *oauth2.Token) {
 	}
 }
 
-func Client() (context.Context, *http.Client) {
+func Client() (context.Context, *http.Client, error) {
 	clientSecretPath := utils.GetClientSecretPath()
 	ctx := context.Background()
 	b, err := ioutil.ReadFile(clientSecretPath)
 	if err != nil {
-		logger.Debugf("Unable to read client secret file: %s, error: %v", clientSecretPath, err)
-		return nil, nil
+		logger.Errorf("Unable to read client secret file: %s, error: %v", clientSecretPath, err)
+		return nil, nil, err
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, searchconsole.WebmastersReadonlyScope)
 	if err != nil {
-		logger.Debugf("Unable to parse client secret file to config: %v", err)
+		logger.Errorf("Unable to parse client secret file to config: %v", err)
+		return nil, nil, err
 	}
 	client := getClient(config)
 
-	return ctx, client
+	return ctx, client, nil
 }

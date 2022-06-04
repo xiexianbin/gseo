@@ -58,6 +58,9 @@ github.com/spf13/viper/internal/encoding/toml
 github.com/spf13/viper/internal/encoding/yaml
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
+# github.com/xiexianbin/golib v0.1.0
+## explicit
+github.com/xiexianbin/golib/logger
 # go.opencensus.io v0.23.0
 go.opencensus.io
 go.opencensus.io/internal

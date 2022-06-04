@@ -17,8 +17,6 @@ limitations under the License.
 package googleapi
 
 import (
-	"fmt"
-	"log"
 	"testing"
 
 	"google.golang.org/api/option"
@@ -26,16 +24,16 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	ctx, client := Client()
+	ctx, client, err := Client()
 	if client == nil {
-		log.Printf("new client is nil, skip")
+		t.Skip("new client is nil, skip")
 		return
 	}
 	searchconsoleService, err := searchconsole.NewService(
 		ctx,
 		option.WithHTTPClient(client))
 	if err != nil {
-		log.Printf("Unable to retrieve Search Console client: %#v", err)
+		t.Skipf("Unable to retrieve Search Console client: %#v", err)
 		return
 	}
 
@@ -44,5 +42,5 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		return
 	}
-	fmt.Println(sitesListResponse)
+	t.Skip(sitesListResponse)
 }

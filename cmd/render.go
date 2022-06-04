@@ -18,14 +18,15 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/xiexianbin/gseo/utils"
-	"google.golang.org/api/searchconsole/v1"
 	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/xiexianbin/golib/logger"
+	"google.golang.org/api/searchconsole/v1"
+
+	"github.com/xiexianbin/gseo/utils"
 )
 
 var contentPath string
@@ -34,7 +35,8 @@ var ctr float64
 var impressions float64
 var position float64
 var max int
-var dryrun bool
+var dryRun bool
+var skipErr bool
 
 type T struct {
 	Impressions int `json:"impressions"`
@@ -51,22 +53,22 @@ default args is:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if contentPath == "" {
-			fmt.Println("content path not special.")
+			logger.Print("content path not special.")
 			os.Exit(1)
 		}
 		if utils.IsDir(contentPath) == false {
-			fmt.Println("content path not exists.")
+			logger.Print("content path not exists.")
 			os.Exit(1)
 		}
 		if strings.HasSuffix(contentPath, "/") {
 			contentPath = strings.TrimRight(contentPath, "/")
 		}
 		if ctr < 0 || ctr > 1 {
-			fmt.Println("0 <= ctr <= 1.")
+			logger.Print("0 <= ctr <= 1.")
 			os.Exit(1)
 		}
 		if max < -1 || max == 0 {
-			fmt.Println("max must >= 1 or must = -1")
+			logger.Print("max must >= 1 or must = -1")
 			os.Exit(1)
 		}
 
@@ -74,51 +76,55 @@ default args is:
 		fileName := utils.GetCacheFile()
 		file, err := os.Open(fileName)
 		if err != nil {
-			_ = fmt.Errorf("%v", err)
+			logger.Errorf("read file %s err: %v", fileName, err.Error())
+			os.Exit(1)
 		}
 		defer file.Close()
 
 		byteValue, _ := ioutil.ReadAll(file)
-		var oldResult []*searchconsole.ApiDataRow
-		_ = json.Unmarshal(byteValue, &oldResult)
+		var searchAnalyticsQueryRows []*searchconsole.ApiDataRow
+		_ = json.Unmarshal(byteValue, &searchAnalyticsQueryRows)
 
-		newResult := utils.ParserSearchAnalyticsQuery(oldResult)
+		newResult := utils.ParserSearchAnalyticsQuery(searchAnalyticsQueryRows)
 		for url, item := range newResult {
-			count := 0
-			var keywords []string
+			targetKeywords := map[string]*utils.KeywordItem{}
 			for k, v := range item {
 				if v.Clicks >= clicks && v.Ctr >= ctr && v.Impressions >= impressions && v.Position >= position {
-					keywords = append(keywords, k)
-					count++
-				}
-				if count >= max && max != -1 {
-					break
+					targetKeywords[k] = v
 				}
 			}
+
+			keywords := utils.SortKeywords(targetKeywords)
 
 			if len(keywords) == 0 {
 				continue
+			} else if len(keywords) > max {
+				keywords = keywords[:max]
 			}
 
-			fmt.Println(fmt.Sprintf("%s", url))
+			logger.Print(url)
 			for _, k := range keywords {
-				fmt.Println(fmt.Sprintf("  - %s", k))
+				logger.Printf("  - %s", k)
 			}
 
-			if dryrun == false {
+			if dryRun == false {
 				markdownFilePath, err := utils.GetMarkdownFileByURL(url, contentPath)
 				if err != nil {
-					fmt.Printf(err.Error())
+					logger.Printf("GetMarkdownFileByURL: %s, err: %s, skip.", url, err.Error())
 					continue
 				}
 
 				err = utils.UpdateKeywords(markdownFilePath, keywords)
 				if err != nil {
-					fmt.Printf(err.Error())
-					break
+					logger.Printf(
+						"UpdateKeywords: %s, keywords: %s, error: %s",
+						markdownFilePath, strings.Join(keywords, ","), err.Error())
+					if skipErr == false {
+						break
+					}
 				}
 
-				fmt.Printf("update markdownFilePath %s, keywords %v done.\n", markdownFilePath, keywords)
+				logger.Printf("update markdownFilePath %s, keywords %v done.\n", markdownFilePath, keywords)
 			}
 		}
 	},
@@ -142,5 +148,7 @@ func init() {
 	renderCmd.Flags().Float64VarP(&impressions, "impressions", "i", 100, ">=impressions to render seo.")
 	renderCmd.Flags().Float64VarP(&position, "position", "p", 10, ">=position to render seo.")
 	renderCmd.Flags().IntVarP(&max, "max", "m", 8, "max seo items, -1 is un-limit.")
-	renderCmd.Flags().BoolVarP(&dryrun, "dryrun", "r", false, "dry run mode.")
+	renderCmd.Flags().BoolVarP(&dryRun, "dryrun", "r", false, "dry run mode.")
+	renderCmd.Flags().BoolVarP(&skipErr, "skip-err", "s", true, "skip error.")
+
 }

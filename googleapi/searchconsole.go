@@ -20,10 +20,9 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/xiexianbin/golib/logger"
 	"google.golang.org/api/option"
 	"google.golang.org/api/searchconsole/v1"
-
-	"github.com/xiexianbin/gseo/utils/logger"
 )
 
 type SearchConsoleAPI struct {
@@ -33,7 +32,7 @@ type SearchConsoleAPI struct {
 }
 
 func NewSearchConsoleAPI() SearchConsoleAPI {
-	ctx, client := Client()
+	ctx, client, _ := Client()
 	searchConsoleService, err := searchconsole.NewService(
 		ctx,
 		option.WithHTTPClient(client))

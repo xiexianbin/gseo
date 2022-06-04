@@ -19,9 +19,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/xiexianbin/golib/logger"
 
 	"github.com/xiexianbin/gseo/googleapi"
 	"github.com/xiexianbin/gseo/utils"
@@ -42,7 +44,7 @@ var initCmd = &cobra.Command{
 		viper.AddConfigPath(utils.DefaultConfigPath)
 		err := viper.ReadInConfig()
 		if err != nil || force {
-			confDir := fmt.Sprintf("%s%c%s", utils.GetHome(), os.PathSeparator, utils.DefaultConfigSubDir)
+			confDir := path.Join(utils.GetHome(), utils.DefaultConfigSubDir)
 			err = os.MkdirAll(confDir, os.ModePerm)
 			if err != nil {
 				_ = fmt.Errorf("create config dir %s err: %s.\n", confDir, err.Error())
@@ -52,18 +54,22 @@ var initCmd = &cobra.Command{
 
 			// set google client secret
 			if clientSecret == "" {
-				clientSecret, err = utils.ReadFromCmd(fmt.Sprintf("Please enter Google API client_secret.json path: "))
+				defaultClientSecret := path.Join(confDir, "client_secret.json")
+				clientSecret, err = utils.ReadFromCmd(fmt.Sprintf("Please enter Google API client_secret.json path (default is %s): ", defaultClientSecret))
 				if err != nil {
-					fmt.Println("Read Google API client_secret.json path err:", err)
+					logger.Printf("Read Google API client_secret.json path err: %s", err.Error())
 					os.Exit(1)
+				}
+				if clientSecret == "" {
+					clientSecret = defaultClientSecret
 				}
 			}
 			viper.Set("client_secret", clientSecret)
 
-			cfgFile := fmt.Sprintf("%s/%s", confDir, utils.DefaultCfgFileName)
+			cfgFile := path.Join(confDir, utils.DefaultCfgFileName)
 			_, err = os.Create(cfgFile)
 			if err != nil {
-				_ = fmt.Errorf("create config file %s err: %s.\n", cfgFile, err.Error())
+				logger.Printf("create config file %s err: %s.\n", cfgFile, err.Error())
 				os.Exit(1)
 			}
 
@@ -71,18 +77,20 @@ var initCmd = &cobra.Command{
 			_ = viper.MergeInConfig()
 			err = viper.WriteConfig()
 			if err == nil {
-				fmt.Println("init config success!")
+				logger.Print("init config success!")
 			} else {
-				fmt.Println("init config error:", err.Error())
+				logger.Printf("init config error: %s", err.Error())
 				os.Exit(1)
 			}
 		} else {
-			fmt.Println("gseo config is already init, if you want to re-init use `--force` flag")
+			logger.Printf("gseo config is already init, if you want to re-init use `gseo init --force` flag")
 		}
 
 		// init google token
-		_, _ = googleapi.Client()
-		fmt.Println("init Google API OAuth2.0 token success!")
+		_, _, err = googleapi.Client()
+		if err == nil {
+			logger.Print("init Google API OAuth2.0 token success!")
+		}
 	},
 }
 

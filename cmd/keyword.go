@@ -18,13 +18,14 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/xiexianbin/gseo/googleapi"
-	"github.com/xiexianbin/gseo/utils"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/xiexianbin/golib/logger"
 	"google.golang.org/api/searchconsole/v1"
+
+	"github.com/xiexianbin/gseo/googleapi"
+	"github.com/xiexianbin/gseo/utils"
 )
 
 var site string
@@ -37,52 +38,69 @@ var keywordCmd = &cobra.Command{
 	Long:  "download hugo post keywords from Google Search Console API, and cache it in `./.gseo/` dir",
 	Run: func(cmd *cobra.Command, args []string) {
 		if site == "" {
-			fmt.Println("site is unknown, use `-s xxx`, get sites cmd is `gseo sites`!")
+			logger.Print("site is unknown, use `-s xxx`, get sites cmd is `gseo sites`!")
 			os.Exit(1)
 		}
 		if last <= 0 {
-			fmt.Println("--last -l must >= 0!")
+			logger.Print("--last -l must >= 0!")
 			os.Exit(1)
 		}
 
 		sc := googleapi.NewSearchConsoleAPI()
 		if sc.SearchConsoleService == nil {
-			fmt.Println("init search console API err.")
+			logger.Print("init search console API err.")
 			os.Exit(1)
 		}
-		searchanalyticsqueryrequest := searchconsole.SearchAnalyticsQueryRequest{
-			StartDate:  utils.LastDate(last),
-			EndDate:    utils.TodayDate(),
-			Dimensions: []string{"PAGE", "QUERY"},
-		}
-		rows := sc.Query(site, &searchanalyticsqueryrequest)
-		if len(rows) > 0 {
-			fmt.Println("Result:")
-			for _, row := range rows {
-				r, _ := json.Marshal(row)
-				fmt.Println(string(r))
+
+		rowLimit := 1000
+		startRow := 0
+		var searchAnalyticsQueryRows []*searchconsole.ApiDataRow
+		for {
+			searchAnalyticsQueryRequest := searchconsole.SearchAnalyticsQueryRequest{
+				Dimensions: []string{"PAGE", "QUERY"},
+				StartDate:  utils.LastDate(last),
+				EndDate:    utils.TodayDate(),
+				RowLimit:   int64(rowLimit),
+				StartRow:   int64(startRow),
+			}
+			rows := sc.Query(site, &searchAnalyticsQueryRequest)
+			lines := len(rows)
+			if lines == 0 || lines < rowLimit {
+				break
+			} else {
+				logger.Printf("==> get %d lines Results", lines)
+				for _, row := range rows {
+					// append may be inefficient
+					searchAnalyticsQueryRows = append(searchAnalyticsQueryRows, row)
+					r, _ := json.Marshal(row)
+					logger.Debug(string(r))
+				}
 			}
 
-			_rows, _ := json.Marshal(rows)
-			// open File
-			fileName := utils.GetCacheFile()
-			file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
-			if err != nil {
-				fmt.Println("Open file err =", err)
-				return
-			}
-			defer file.Close()
-
-			// write to file
-			n, err := file.Write(_rows)
-			if err != nil {
-				fmt.Println("Write file err =", err)
-				return
-			}
-			fmt.Println("Write file", fileName, "success, n =", n)
-		} else {
-			fmt.Println("No Result from Google Console API.")
+			startRow += rowLimit
 		}
+
+		bs, err := json.Marshal(searchAnalyticsQueryRows)
+		if err != nil {
+			logger.Errorf("Marshal searchAnalyticsQueryRows to bytes err: %s", err.Error())
+			return
+		}
+		// open File
+		fileName := utils.GetCacheFile()
+		file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			logger.Errorf("Open file %s err %s", fileName, err.Error())
+			return
+		}
+		defer file.Close()
+
+		// write to file
+		n, err := file.Write(bs)
+		if err != nil {
+			logger.Printf("Write to file err: %s", err.Error())
+			return
+		}
+		logger.Printf("Write to file %s success, bytes %d", fileName, n)
 	},
 }
 

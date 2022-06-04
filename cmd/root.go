@@ -17,10 +17,10 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/xiexianbin/golib/logger"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,9 +33,7 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			fmt.Println("0 args")
-		} else if len(args) == 1 {
-			fmt.Println("1 args", args)
+			logger.Print("run `gseo -h` for help")
 		}
 	},
 }

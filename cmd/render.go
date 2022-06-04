@@ -35,7 +35,8 @@ var ctr float64
 var impressions float64
 var position float64
 var max int
-var dryrun bool
+var dryRun bool
+var skipErr bool
 
 type T struct {
 	Impressions int `json:"impressions"`
@@ -106,7 +107,7 @@ default args is:
 				logger.Printf("  - %s", k)
 			}
 
-			if dryrun == false {
+			if dryRun == false {
 				markdownFilePath, err := utils.GetMarkdownFileByURL(url, contentPath)
 				if err != nil {
 					logger.Printf("GetMarkdownFileByURL: %s, err: %s, skip.", url, err.Error())
@@ -118,7 +119,9 @@ default args is:
 					logger.Printf(
 						"UpdateKeywords: %s, keywords: %s, error: %s",
 						markdownFilePath, strings.Join(keywords, ","), err.Error())
-					break
+					if skipErr == false {
+						break
+					}
 				}
 
 				logger.Printf("update markdownFilePath %s, keywords %v done.\n", markdownFilePath, keywords)
@@ -145,5 +148,7 @@ func init() {
 	renderCmd.Flags().Float64VarP(&impressions, "impressions", "i", 100, ">=impressions to render seo.")
 	renderCmd.Flags().Float64VarP(&position, "position", "p", 10, ">=position to render seo.")
 	renderCmd.Flags().IntVarP(&max, "max", "m", 8, "max seo items, -1 is un-limit.")
-	renderCmd.Flags().BoolVarP(&dryrun, "dryrun", "r", false, "dry run mode.")
+	renderCmd.Flags().BoolVarP(&dryRun, "dryrun", "r", false, "dry run mode.")
+	renderCmd.Flags().BoolVarP(&skipErr, "skip-err", "s", true, "skip error.")
+
 }

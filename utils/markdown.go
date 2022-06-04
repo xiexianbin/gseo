@@ -18,12 +18,14 @@ package utils
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/xiexianbin/golib/logger"
+	"gopkg.in/yaml.v2"
 )
 
 type PostYaml struct {
@@ -84,23 +86,58 @@ func UpdateKeywords(filename string, keywords []string) error {
 
 	var oldStr string
 	if len(postYaml.Keywords) == 0 {
-		oldStr = "keywords: \\[\\]"
+		oldStr = "^keywords: \\[\\]"
 	} else {
-		oldStr = "keywords:\\n  - " + strings.Join(postYaml.Keywords, "\\n  - ")
+		// delete line
+		for _, keyword := range postYaml.Keywords {
+			delLine := fmt.Sprintf("  - %s", keyword)
+			// delLine can not contain like: &
+			delLine = strings.Replace(delLine, "&", ".", -1)
+			delLine = strings.Replace(delLine, "\"", ".", -1)
+			delLine = strings.Replace(delLine, "'", ".", -1)
+			delLine = strings.Replace(delLine, "/", ".", -1)
+
+			var cmd string
+			if runtime.GOOS == "darwin" {
+				cmd = fmt.Sprintf("sed -i '' \"/%s/d\" %s", delLine, filename)
+			} else {
+				cmd = fmt.Sprintf("sed -i \"/%s/d\" %s", delLine, filename)
+			}
+			_, err = RunCommand(cmd)
+			if err != nil {
+				logger.Warnf("run [%s] occur err: %s", cmd, err.Error())
+				return err
+			}
+		}
+		oldStr = fmt.Sprintf("^keywords:")
 	}
 
 	newKeywords := postYaml.Keywords
-	for _, key := range keywords {
-		if IsContain(postYaml.Tags, key) || IsContain(newKeywords, key) {
+	maxKeywordLength := 60
+	for _, keyword := range keywords {
+		if IsContain(postYaml.Tags, keyword) || IsContain(newKeywords, keyword) {
 			continue
 		}
-		newKeywords = append(newKeywords, key)
+		if len(keyword) >= maxKeywordLength {
+			logger.Warnf("skip long keyword (more than %d): %s", maxKeywordLength, keyword)
+			continue
+		}
+
+		// replace some key to empty
+		keyword = strings.Replace(keyword, "\"", "", -1)
+		keyword = strings.Replace(keyword, ":", "", -1)
+		keyword = strings.Replace(keyword, "#", "", -1)
+		keyword = strings.Replace(keyword, "_", "-", -1)
+		keyword = strings.Replace(keyword, "[", "-", -1)
+		keyword = strings.Replace(keyword, "]", "-", -1)
+
+		newKeywords = append(newKeywords, keyword)
 	}
 
 	if len(newKeywords) == 0 {
 		return nil
 	}
-	newStr := "keywords:\\n  - " + strings.Join(newKeywords, "\\n  - ")
+	newStr := fmt.Sprintf("keywords:\\n  - %s", strings.Join(newKeywords, "\\n  - "))
 
 	var cmd string
 	if runtime.GOOS == "darwin" {
@@ -111,6 +148,7 @@ func UpdateKeywords(filename string, keywords []string) error {
 
 	_, err = RunCommand(cmd)
 	if err != nil {
+		logger.Warnf("run [%s] occur err: %s", cmd, err.Error())
 		return err
 	}
 

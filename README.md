@@ -88,6 +88,7 @@ Flags:
   -i, --impressions float   >=impressions to render seo. (default 100)
   -m, --max int             max seo items, -1 is un-limit. (default 8)
   -p, --position float      >=position to render seo. (default 10)
+  -s, --skip-err            skip error. (default true)
 ```
 
 ### how to get Google Search Console API token
@@ -149,6 +150,10 @@ $ gseo render --content ${HUGO_CONTENT} --position 0 --ctr 0 --impressions 1 --c
 ```
 
 now, you can find seo keywords has auto update/render to `${HUGO_CONTENT}`.
+
+## Action
+
+- keyword can not contain `:`, occur golang yaml parse err
 
 ## arch
 

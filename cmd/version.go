@@ -43,14 +43,14 @@ func (v Version) String() string {
 // CurrentVersion represents the current build version.
 // This should be the only one.
 var CurrentVersion = Version{
-	Number:       0.1,
-	PatchVersion: 0,
-	Suffix:       "-DEV",
+	Number:       1,
+	PatchVersion: 2,
+	Suffix:       "",
 }
 
 func version(version float32, patchVersion int, suffix string) string {
 	if patchVersion > 0 {
-		return fmt.Sprintf("%.2f.%d%s", version, patchVersion, suffix)
+		return fmt.Sprintf("%.1f.%d%s", version, patchVersion, suffix)
 	}
 	return fmt.Sprintf("%.2f%s", version, suffix)
 }

@@ -51,39 +51,56 @@ var keywordCmd = &cobra.Command{
 			logger.Print("init search console API err.")
 			os.Exit(1)
 		}
-		searchanalyticsqueryrequest := searchconsole.SearchAnalyticsQueryRequest{
-			StartDate:  utils.LastDate(last),
-			EndDate:    utils.TodayDate(),
-			Dimensions: []string{"PAGE", "QUERY"},
-		}
-		rows := sc.Query(site, &searchanalyticsqueryrequest)
-		if len(rows) > 0 {
-			logger.Print("Result:")
-			for _, row := range rows {
-				r, _ := json.Marshal(row)
-				logger.Print(string(r))
+
+		rowLimit := 1000
+		startRow := 0
+		var searchAnalyticsQueryRows []*searchconsole.ApiDataRow
+		for {
+			searchAnalyticsQueryRequest := searchconsole.SearchAnalyticsQueryRequest{
+				Dimensions: []string{"PAGE", "QUERY"},
+				StartDate:  utils.LastDate(last),
+				EndDate:    utils.TodayDate(),
+				RowLimit:   int64(rowLimit),
+				StartRow:   int64(startRow),
+			}
+			rows := sc.Query(site, &searchAnalyticsQueryRequest)
+			lines := len(rows)
+			if lines == 0 || lines < rowLimit {
+				break
+			} else {
+				logger.Printf("==> get %d lines Results", lines)
+				for _, row := range rows {
+					// append may be inefficient
+					searchAnalyticsQueryRows = append(searchAnalyticsQueryRows, row)
+					r, _ := json.Marshal(row)
+					logger.Debug(string(r))
+				}
 			}
 
-			_rows, _ := json.Marshal(rows)
-			// open File
-			fileName := utils.GetCacheFile()
-			file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
-			if err != nil {
-				logger.Print("Open file err =", err)
-				return
-			}
-			defer file.Close()
-
-			// write to file
-			n, err := file.Write(_rows)
-			if err != nil {
-				logger.Printf("Write file err: %s", err.Error())
-				return
-			}
-			logger.Printf("Write file %s success, n = %d", fileName, n)
-		} else {
-			logger.Print("No Result from Google Console API.")
+			startRow += rowLimit
 		}
+
+		bs, err := json.Marshal(searchAnalyticsQueryRows)
+		if err != nil {
+			logger.Errorf("Marshal searchAnalyticsQueryRows to bytes err: %s", err.Error())
+			return
+		}
+		// open File
+		fileName := utils.GetCacheFile()
+		file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			logger.Errorf("Open file %s err %s", fileName, err.Error())
+			return
+		}
+		defer file.Close()
+
+		// write to file
+		n, err := file.Write(bs)
+		if err != nil {
+			logger.Printf("Write to file err: %s", err.Error())
+			return
+		}
+		logger.Printf("Write to file %s success, bytes %d", fileName, n)
 	},
 }
 

@@ -75,31 +75,30 @@ default args is:
 		fileName := utils.GetCacheFile()
 		file, err := os.Open(fileName)
 		if err != nil {
-			logger.Errorf("%v", err)
+			logger.Errorf("read file %s err: %v", fileName, err.Error())
 			os.Exit(1)
 		}
 		defer file.Close()
 
 		byteValue, _ := ioutil.ReadAll(file)
-		var rawResult []*searchconsole.ApiDataRow
-		_ = json.Unmarshal(byteValue, &rawResult)
+		var searchAnalyticsQueryRows []*searchconsole.ApiDataRow
+		_ = json.Unmarshal(byteValue, &searchAnalyticsQueryRows)
 
-		newResult := utils.ParserSearchAnalyticsQuery(rawResult)
+		newResult := utils.ParserSearchAnalyticsQuery(searchAnalyticsQueryRows)
 		for url, item := range newResult {
-			count := 0
-			var keywords []string
+			targetKeywords := map[string]*utils.KeywordItem{}
 			for k, v := range item {
 				if v.Clicks >= clicks && v.Ctr >= ctr && v.Impressions >= impressions && v.Position >= position {
-					keywords = append(keywords, k)
-					count++
-				}
-				if count >= max && max != -1 {
-					break
+					targetKeywords[k] = v
 				}
 			}
 
+			keywords := utils.SortKeywords(targetKeywords)
+
 			if len(keywords) == 0 {
 				continue
+			} else if len(keywords) > max {
+				keywords = keywords[:max]
 			}
 
 			logger.Print(url)

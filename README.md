@@ -26,6 +26,8 @@ chmod +x gseo
 
 ### show help
 
+- root help
+
 ```
 $ gseo -h
  golang client to optimize [hugo](https://www.xiexianbin.cn/tags/hugo/) seo by Google Search Console.
@@ -48,6 +50,44 @@ Flags:
   -v, --verbose   debug info.
 
 Use "gseo [command] --help" for more information about a command.
+```
+
+- keywords help
+
+
+```
+$ gseo help keyword
+download hugo post keywords from Google Search Console API, and cache it in `./.gseo/` dir
+
+Usage:
+  gseo keyword [flags]
+
+Flags:
+  -h, --help          help for keyword
+  -l, --last int      last days (default 90)
+  -s, --site string   site url
+```
+
+- render help
+
+```
+$ gseo help render
+render hugo post markdown files.
+default args is:
+  gseo render --content PATH_OF_HUGO_CONTENT --position 10 --ctr 0 --impressions 100 --clicks 0.3 --max 8 --dryrun
+
+Usage:
+  gseo render [flags]
+
+Flags:
+  -k, --clicks float        >=clicks to render seo.
+      --content string      hugo content path
+  -c, --ctr float           ctr = clicks / impressions to render seo, and 0 <= ctr <= 1. (default 0.3)
+  -r, --dryrun              dry run mode.
+  -h, --help                help for render
+  -i, --impressions float   >=impressions to render seo. (default 100)
+  -m, --max int             max seo items, -1 is un-limit. (default 8)
+  -p, --position float      >=position to render seo. (default 10)
 ```
 
 ### how to get Google Search Console API token
@@ -74,7 +114,7 @@ init Google API OAuth2.0 token success!
 
 ### Demo
 
-- site list
+- list sites
 
 ```
 $ gseo sites
@@ -84,14 +124,13 @@ siteOwner        https://docs.xiexianbin.cn/
 siteOwner        https://www.xiexianbin.cn/
 ```
 
-- keywords, while write keywords to cache file `~/.gseo/cache-<date>.json`
+- show special site keywords, while write keywords to cache file `~/.gseo/cache-<date>.json`
 
 ```
 $ gseo keyword -s "https://www.xiexianbin.cn/"
-Result:
-{"clicks":40,"ctr":0.28169014084507044,"impressions":142,"keys":["https://www.xiexianbin.cn/linux/commands/numactl/index.html","numactl 命令"],"position":2.295774647887324}
-{"clicks":31,"ctr":0.05950095969289827,"impressions":521,"keys":["https://www.xiexianbin.cn/linux/commands/numactl/index.html","numactl"],"position":7.7389635316698655}
-...
+==> get 1000 lines Results
+==> get 1000 lines Results
+Write to file /Users/xiexianbin/.gseo/cache-2022-06-03.json success, bytes 276427
 ```
 
 - render demo, read keywords from cache file `~/.gseo/cache-<date>.json`
